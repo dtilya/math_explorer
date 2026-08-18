@@ -1,4 +1,4 @@
-const CACHE='math-explorer-v5';
+const CACHE='math-explorer-v5-3';
 const ASSETS=[
  './','./index.html','./multiplication.html','./division.html','./tutor.html',
  './manifest.webmanifest','./icon-192.svg','./icon-512.svg'

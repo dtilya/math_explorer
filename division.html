@@ -15,7 +15,45 @@ section{display:none}.active-section{display:block}.hero,.card{padding:17px;bord
 .mastery-q{font-size:30px;font-weight:700;text-align:center;margin:20px 0}.mastery-choices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .mastery-result{padding:15px;border-radius:15px;background:#EAF3FF;margin:12px 0}.mastery-good{background:#EAF7E8}.mastery-warn{background:#FFF5D6}
 .strategy-card{padding:14px;border-radius:15px;background:#F3EEFA;margin:12px 0}
-</style><link rel="manifest" href="manifest.webmanifest"></head><body><div class="wrap"><header><h1>Division Explorer</h1><p>Share → Group → Connect → Solve → Apply</p></header><nav class="child-nav"><button onclick="goHome()">🏠 Home</button><button onclick="goBack()">← Back</button><span>Choose a task below.</span></nav>
+</style><link rel="manifest" href="manifest.webmanifest">
+<style id="mobile-layout-v5-3">
+@media (max-width: 600px){
+  body{overflow-x:hidden}
+  .wrap{width:100%;padding:10px}
+  header{padding:17px 15px;border-radius:16px}
+  header h1{font-size:26px;line-height:1.15;margin:0 0 6px}
+  header p{font-size:14px;margin:0}
+  .child-nav{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;padding:8px}
+  .child-nav button{width:100%;min-height:44px;padding:10px 8px}
+  .child-nav span{grid-column:1/-1;margin:0;font-size:12px;text-align:center}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}
+  .tabs button{min-height:46px;padding:9px 7px;font-size:14px}
+  #data-tools{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:10px!important}
+  #data-tools>b{grid-column:1/-1}
+  #data-tools>button,#data-tools label{width:100%;min-height:44px;margin:0!important;padding:10px 7px!important;text-align:center}
+  #data-tools>span{grid-column:1/-1;line-height:1.35;text-align:center}
+  .hero,.card{padding:14px;border-radius:15px;margin:9px 0}
+  .hero h2{font-size:21px;margin:0 0 6px}
+  .hero p{font-size:14px;line-height:1.35}
+  .grid{grid-template-columns:1fr;gap:9px}
+  .big{font-size:25px;margin:12px 4px}
+  .groups{gap:5px}
+  .group{padding:6px}
+  .dot{width:13px;height:13px;margin:2px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .choices button,.mastery-choices button{min-height:46px;padding:10px 6px}
+  button{font-size:14px;min-height:44px}
+  .mastery-modal{padding:10px}
+  .mastery-box{padding:16px;border-radius:18px;max-height:92vh;overflow:auto}
+  .mastery-q{font-size:26px;margin:14px 0}
+}
+@media (max-width:360px){
+  .tabs button{font-size:13px}
+  #data-tools{grid-template-columns:1fr}
+  #data-tools>b,#data-tools>span{grid-column:auto}
+}
+</style>
+</head><body><div class="wrap"><header><h1>Division Explorer</h1><p>Share → Group → Connect → Solve → Apply</p></header><nav class="child-nav"><button onclick="goHome()">🏠 Home</button><button onclick="goBack()">← Back</button><span>Choose a task below.</span></nav>
 <div class="tabs"><button class="active" onclick="show('learn',this)">🟢 Learn</button><button onclick="show('practice',this)">🟡 Practice</button><button onclick="show('challenge',this)">🔵 Challenges</button><button onclick="show('test',this)">🔴 Random Test</button><button onclick="show('progress',this)">📊 My Progress</button></div>
 
 <div id="data-tools" style="margin:12px 0;padding:12px;background:#fff;border:1px solid #d9e1ea;border-radius:14px">
