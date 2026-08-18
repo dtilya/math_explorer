@@ -1,0 +1,97 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Explorer — Division</title>
+<style>
+:root{--navy:#17365D;--blue:#4F81BD;--green:#70AD47;--gold:#FFD966;--bg:#F7F9FC;--text:#243447}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0}.wrap{max-width:960px;margin:auto;padding:18px}
+header{background:var(--navy);color:#fff;padding:22px;border-radius:20px}.tabs,.choices,.divisors{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{padding:11px 14px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-size:15px;cursor:pointer}button:hover,.active{background:var(--navy);color:white}
+section{display:none}.active-section{display:block}.hero,.card{padding:17px;border-radius:16px;margin:12px 0}.hero{background:#EAF3FF}.card{background:#fff;border:1px solid #d9e1ea}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.big{text-align:center;font-size:29px;font-weight:700;margin:15px}.groups{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}.group{border:2px solid var(--blue);border-radius:12px;padding:8px}.dot{display:inline-block;width:15px;height:15px;border-radius:50%;background:var(--blue);margin:3px}.bar{height:10px;background:#e7eaf0;border-radius:10px;overflow:hidden}.bar span{display:block;height:100%;background:var(--green)}
+</style><style>
+.child-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;padding:10px 12px;background:#fff;border:1px solid #d9e1ea;border-radius:14px}
+.child-nav span{font-size:13px;color:#667085;margin-left:auto}
+.mastery-modal{position:fixed;inset:0;background:rgba(20,35,55,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.mastery-box{background:#fff;max-width:560px;width:100%;border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.mastery-q{font-size:30px;font-weight:700;text-align:center;margin:20px 0}.mastery-choices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mastery-result{padding:15px;border-radius:15px;background:#EAF3FF;margin:12px 0}.mastery-good{background:#EAF7E8}.mastery-warn{background:#FFF5D6}
+.strategy-card{padding:14px;border-radius:15px;background:#F3EEFA;margin:12px 0}
+</style><link rel="manifest" href="manifest.webmanifest"></head><body><div class="wrap"><header><h1>Division Explorer</h1><p>Share → Group → Connect → Solve → Apply</p></header><nav class="child-nav"><button onclick="goHome()">🏠 Home</button><button onclick="goBack()">← Back</button><span>Choose a task below.</span></nav>
+<div class="tabs"><button class="active" onclick="show('learn',this)">🟢 Learn</button><button onclick="show('practice',this)">🟡 Practice</button><button onclick="show('challenge',this)">🔵 Challenges</button><button onclick="show('test',this)">🔴 Random Test</button><button onclick="show('progress',this)">📊 My Progress</button></div>
+
+<div id="data-tools" style="margin:12px 0;padding:12px;background:#fff;border:1px solid #d9e1ea;border-radius:14px">
+  <b>👨‍🏫 Tutor tools</b>
+  <button onclick="exportProgress()">Export progress</button><button onclick="exportSessionReport()">Export session report</button>
+  <label style="display:inline-block;padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;cursor:pointer">
+    Import progress <input id="importFile" type="file" accept=".json" style="display:none" onchange="importProgress(event)">
+  </label>
+  <span style="font-size:12px;color:#667085">Use these to move progress into the Tutor Dashboard.</span>
+</div>
+<section id="learn" class="active-section"><div class="hero"><h2>Learning Path</h2><p>Division is introduced through sharing and grouping before we use multiplication backwards.</p></div><div class="card" id="lesson"></div></section>
+<section id="practice"><div class="hero"><h2>Adaptive Division Practice</h2><p>Facts you miss return more often.</p></div><div class="divisors" id="ds"></div><div class="card"><div class="big" id="q"></div><div class="groups" id="visual"></div><p id="hint"></p><div class="choices" id="choices"></div><p id="feed"></p><button onclick="nextQ()">Next →</button></div></section>
+<section id="challenge"><div class="hero"><h2>Division Detective 🕵️</h2></div><div class="grid"><div class="card"><h3>Missing number</h3><p id="mq"></p><div class="choices" id="mc"></div></div><div class="card"><h3>Fact Family</h3><p>Use 6, 7 and 42 to make four related facts.</p><button onclick="showFamily()">Show answer / check</button><p id="family"></p></div><div class="card"><h3>Word Problem</h3><p>24 sweets are shared equally among 6 children. How many does each child get?</p><div class="choices" id="sc"></div></div></div><p id="cf"></p></section>
+<section id="test"><div class="hero"><h2>🎯 Random Division Test</h2><p>Questions are weighted toward division facts that still need practice.</p></div><div class="card"><p>Question <b id="tn">1</b> of 15</p><div class="big" id="tq"></div><div class="choices" id="tc"></div><p id="tf"></p><button onclick="newTest()">Start / New Test</button></div></section>
+<section id="progress"><div class="hero"><h2>📊 My Progress</h2><p>Division is connected to multiplication. Strong multiplication facts will help here.</p></div><div class="grid" id="pg"></div></section></div>
+<script>
+const D=[2,3,4,5,6,7,8,9,10,11,12],KEY='mathExplorerDivisionV2';let data=JSON.parse(localStorage.getItem(KEY)||'null')||{facts:{},stars:0,unlocked:2},d=6,n=1;
+function $(x){return document.getElementById(x)}function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function fact(d,n){let k=d+'d'+n;if(!data.facts[k])data.facts[k]={r:0,w:0,seen:0};return data.facts[k]}
+function show(id,b){document.querySelectorAll('section').forEach(s=>s.classList.remove('active-section'));$(id).classList.add('active-section');document.querySelectorAll('.tabs>button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='challenge')challenge();if(id==='progress')progress()}
+function lesson(){let s=`<h2>1. Share equally</h2><p>6 apples shared between 2 children gives 3 each.</p><div class="big">6 ÷ 2 = 3</div><h2>2. Make equal groups</h2><p>12 objects in groups of 3 make 4 groups.</p><div class="big">12 ÷ 3 = 4</div><h2>3. Connect to multiplication</h2><div class="hero"><b>42 ÷ 6 = ?</b><br>Ask: What × 6 makes 42?<br><b>7 × 6 = 42 → 42 ÷ 6 = 7</b></div><h2>4. Fact families</h2><p>4×5=20, 5×4=20, 20÷4=5, 20÷5=4.</p><p>Finish a lesson to unlock the next divisor.</p><button onclick="unlock()">✓ I understand</button>`;$('lesson').innerHTML=s}
+function unlock(){if(data.unlocked<12)data.unlocked=D[D.indexOf(data.unlocked)+1]||12;data.stars++;save();makeDivisors()}
+function makeDivisors(){$('ds').innerHTML='';D.forEach(x=>{let b=document.createElement('button');b.textContent='÷ '+x;b.disabled=x>data.unlocked;b.className=x===d?'active':'';b.onclick=()=>{d=x;n=1;practice();makeDivisors()};$('ds').appendChild(b)})}
+function pick(){let c=[];for(let x=2;x<=data.unlocked;x++)for(let m=1;m<=12;m++){let f=fact(x,m),w=1+f.w*4+(f.seen<2?2:0);for(let j=0;j<w;j++)c.push([x,m])}return c[Math.floor(Math.random()*c.length)]}
+let cur;
+function practice(){cur=pick();d=cur[0];n=cur[1];let total=d*n,f=fact(d,n);f.seen++;save();$('q').textContent=`${total} ÷ ${d} = ?`;$('visual').innerHTML='';if(f.r<3&&n<=6){for(let g=0;g<n;g++){let z=document.createElement('div');z.className='group';for(let i=0;i<d;i++){let dot=document.createElement('span');dot.className='dot';z.appendChild(dot)}$('visual').appendChild(z)}$('hint').textContent='See the equal groups. How many groups are there?'}else $('hint').textContent=`Think backwards: what × ${d} makes ${total}?`;
+let o=[n,n+1,Math.max(1,n-1),n+2].sort(()=>Math.random()-.5);$('choices').innerHTML='';[...new Set(o)].forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>{if(v===n){f.r++;f.w=Math.max(0,f.w-1);data.stars++;logAnswer('division',d,n,true,v);$('feed').textContent='Correct! 🎉'}else{f.w++;logAnswer('division',d,n,false,v);$('feed').textContent='Try the matching multiplication fact.'}save();progress()};$('choices').appendChild(b)})}
+function nextQ(){$('feed').textContent='';practice()}
+function challenge(){let x=Math.min(data.unlocked,12),m=Math.floor(Math.random()*8)+2,total=x*m;$('mq').textContent=`${total} ÷ ${x} = □`;$('mc').innerHTML='';[m,m+1,Math.max(1,m-1),m+2].forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>$('cf').textContent=v===m?'Correct detective! 🔎':'Use multiplication backwards.';$('mc').appendChild(b)});$('sc').innerHTML='';[4,3,5,6].forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>$('cf').textContent=v===4?'Correct! 24÷6=4.':'Share 24 into 6 equal groups.';$('sc').appendChild(b)})}
+function showFamily(){$('family').innerHTML='<b>6×7=42<br>7×6=42<br>42÷6=7<br>42÷7=6</b>'}
+let test=[],ti=0,score=0;function newTest(){test=[];for(let i=0;i<15;i++){let [x,m]=pick();test.push({q:`${x*m} ÷ ${x} = ?`,a:m})}ti=0;score=0;renderTest()}
+function renderTest(){let x=test[ti];$('tn').textContent=ti+1;$('tq').textContent=x.q;$('tc').innerHTML='';[x.a,x.a+1,Math.max(1,x.a-1),x.a+2].sort(()=>Math.random()-.5).forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>{if(v===x.a){score++;logAnswer('division',x.q.split('÷')[0].trim(),x.q.split('÷')[1].split('=')[0].trim(),true,v)}else{logAnswer('division',x.q.split('÷')[0].trim(),x.q.split('÷')[1].split('=')[0].trim(),false,v)}ti++;if(ti<15)renderTest();else{$('tq').textContent=`Test complete: ${score}/15`;$('tc').innerHTML='';$('tf').innerHTML=`<b>${score}/15</b> correct.`}};$('tc').appendChild(b)})}
+function progress(){$('pg').innerHTML='';D.forEach(x=>{let r=0,t=0,weak=[];for(let m=1;m<=12;m++){let f=fact(x,m);r+=f.r;t+=f.r+f.w;if(f.w>f.r)weak.push(m)}let p=t?Math.round(100*r/t):0,c=document.createElement('div');c.className='card';c.innerHTML=`<b>÷ ${x}</b><p>${r}/${t} correct</p><div class="bar"><span style="width:${p}%"></span></div><p>${p}% accuracy</p><small>${weak.length?'Needs work: '+weak.map(m=>x+'÷'+(x*m)).join(', '):'No clear weak facts yet.'}</small>`;$('pg').appendChild(c)})}
+lesson();makeDivisors();practice();challenge();progress();
+
+function exportProgress(){
+ const payload={app:"Math Explorer",book:"division",version:"3.0",exportedAt:new Date().toISOString(),data:JSON.parse(localStorage.getItem("mathExplorerDivisionV2")||"{}")};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=payload.book+"_progress.json";a.click();URL.revokeObjectURL(a.href);
+}
+function importProgress(e){
+ const f=e.target.files[0]; if(!f)return;
+ const r=new FileReader(); r.onload=()=>{try{const p=JSON.parse(r.result);localStorage.setItem("mathExplorerDivisionV2",JSON.stringify(p.data));location.reload()}catch(err){alert("That progress file could not be read.")}}; r.readAsText(f);
+}
+
+const SESSION_KEY="mathExplorerDivisionV2_sessions_v4";
+let sessionStarted=new Date().toISOString(), sessionRight=0, sessionWrong=0, sessionItems=[];
+function logAnswer(book,t,n,correct,userAnswer){
+  sessionItems.push({time:new Date().toISOString(),book,table:t,fact:n,correct,userAnswer});
+  if(correct)sessionRight++;else sessionWrong++;
+}
+function finishSession(){
+  let sessions=JSON.parse(localStorage.getItem(SESSION_KEY)||"[]");
+  sessions.push({started:sessionStarted,ended:new Date().toISOString(),right:sessionRight,wrong:sessionWrong,items:sessionItems});
+  localStorage.setItem(SESSION_KEY,JSON.stringify(sessions));
+}
+function exportSessionReport(){
+  finishSession();
+  let sessions=JSON.parse(localStorage.getItem(SESSION_KEY)||"[]");
+  let latest=sessions[sessions.length-1]||{};
+  let report={book:"division",session:latest,allSessions:sessions};
+  let blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+  let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="division_session_report.json";a.click();URL.revokeObjectURL(a.href);
+}
+window.addEventListener("beforeunload",()=>{if(sessionItems.length)finishSession()});
+</script><script>
+function goHome(){location.href='index.html'} function goBack(){if(history.length>1)history.back();else goHome()}
+let divisionMastery={};
+function startDivisionMastery(dv){divisionMastery={divisor:dv,questions:[6,7,8,9,10].sort(()=>Math.random()-.5),i:0,score:0};showDivisionModal();renderDivisionMastery()}
+function showDivisionModal(){if(document.getElementById('masteryModal'))return;let d=document.createElement('div');d.id='masteryModal';d.className='mastery-modal';d.innerHTML='<div class="mastery-box"><h2>🧠 Show me what you know!</h2><p>Let’s check this division fact family before moving on.</p><div id="masteryBody"></div></div>';document.body.appendChild(d)}
+function renderDivisionMastery(){let q=divisionMastery.questions[divisionMastery.i],dv=divisionMastery.divisor,total=dv*q,b=document.getElementById('masteryBody'),opts=[q,q+1,Math.max(1,q-1),q+2].sort(()=>Math.random()-.5);b.innerHTML=`<p>Question ${divisionMastery.i+1} of 5</p><div class="mastery-q">${total} ÷ ${dv} = ?</div><div class="mastery-choices" id="masteryChoices"></div><p class="muted">Think: what × ${dv} makes ${total}?</p>`;[...new Set(opts)].forEach(v=>{let x=document.createElement('button');x.textContent=v;x.onclick=()=>answerDivisionMastery(v);document.getElementById('masteryChoices').appendChild(x)})}
+function answerDivisionMastery(v){if(v===divisionMastery.questions[divisionMastery.i])divisionMastery.score++;divisionMastery.i++;if(divisionMastery.i<5)renderDivisionMastery();else finishDivisionMastery()}
+function finishDivisionMastery(){let dv=divisionMastery.divisor,s=divisionMastery.score,pass=s>=4;data.masteryChecks=data.masteryChecks||{};let old=data.masteryChecks[dv]||{attempts:0,best:0};data.masteryChecks[dv]={attempts:old.attempts+1,best:Math.max(old.best,s),last:s,passed:pass,updated:new Date().toISOString()};if(pass){if(dv===data.unlocked&&data.unlocked<12)data.unlocked=D[D.indexOf(dv)+1]||12;data.stars++;save();makeDivisors()}let b=document.getElementById('masteryBody');b.innerHTML=`<h2>${pass?'🟢 Ready to move on!':'🟡 Almost there!'}</h2><div class="mastery-result ${pass?'mastery-good':'mastery-warn'}"><b>${s}/5 correct</b><br>Quick-recall score: ${s}/5</div>${!pass?'<div class="strategy-card"><b>Try this:</b><br>Use the matching multiplication fact. Example: 48 ÷ 6 asks “what × 6 makes 48?” → 8 × 6 = 48.</div>':''}<p>${pass?'You have shown enough understanding to continue.':'Practise a few more facts, then try the check again.'}</p><button onclick="closeDivisionMastery()">${pass?'Continue':'Back to practice'}</button>`}
+function closeDivisionMastery(){document.getElementById('masteryModal')?.remove();makeDivisors();lesson()}
+function unlock(){startDivisionMastery(data.unlocked)}
+const originalDivisionLessonV5=lesson;
+function lesson(){originalDivisionLessonV5();let btn=document.querySelector('#lesson button[onclick^="unlock"]');if(btn)btn.textContent='🧠 Show me what you know!'}
+lesson();
+</script></body></html>

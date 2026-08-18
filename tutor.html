@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Explorer — Tutor Dashboard v4</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f7f9fc;color:#243447;margin:0}.wrap{max-width:1100px;margin:auto;padding:20px}
+header{background:#17365D;color:white;padding:24px;border-radius:20px}.tabs,.actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+button,label{padding:10px 13px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-size:15px;cursor:pointer}button:hover,.active{background:#17365D;color:#fff}
+section{display:none}.show{display:block}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.card{background:#fff;border:1px solid #d9e1ea;border-radius:16px;padding:17px;margin:12px 0}
+.kpi{font-size:28px;font-weight:700}.muted{color:#667085}.bar{height:11px;background:#e7eaf0;border-radius:20px;overflow:hidden}.bar span{display:block;height:100%;background:#70AD47}
+.good{color:#287a3e;font-weight:700}.warn{color:#a35a00;font-weight:700}.bad{color:#a33;font-weight:700}
+table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f5f7}
+.report{background:#fff8d8;border:1px solid #ffd966;border-radius:14px;padding:15px}.pill{display:inline-block;padding:4px 8px;background:#eef2f7;border-radius:99px;margin:2px}
+</style>
+<style id="math-explorer-nav-css">
+.mx-nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 0}
+.mx-nav a,.mx-nav button{display:inline-block;padding:9px 13px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#17365D;text-decoration:none;font-size:14px;cursor:pointer}
+.mx-nav a:hover,.mx-nav button:hover{background:#17365D;color:#fff}
+</style>
+</head><body><div class="wrap">
+
+<div class="mx-nav" aria-label="Math Explorer navigation">
+  <a href="index.html">🏠 Home</a>
+  <button type="button" onclick="history.back()">← Back</button>
+</div>
+<header><h1>👨‍🏫 Math Explorer — Tutor Dashboard</h1><p>Progress over time • weak facts • next lesson • session reports</p></header>
+
+<div class="card"><h2>Import Data</h2><p class="muted">Import progress JSON from either book. You can also import a session report.</p>
+<div class="actions"><label>Import JSON <input id="file" type="file" accept=".json" style="display:none"></label><button onclick="loadDemo()">Load demo</button><button onclick="clearAll()">Clear</button><button onclick="exportSummary()">Export tutor summary</button></div></div>
+
+<div class="tabs">
+<button class="active" onclick="tab('overview',this)">Overview</button><button onclick="tab('masteryChecks',this)">Mastery Checks</button><button onclick="tab('mastery',this)">Mastery</button><button onclick="tab('history',this)">Session History</button><button onclick="tab('plan',this)">Next Lesson</button>
+</div>
+
+<section id="overview" class="show"><div class="grid" id="kpis"></div><div class="card"><h2>Priority facts</h2><div id="priority"></div></div></section>
+<section id="mastery"><div class="card"><h2>Multiplication</h2><div id="mt"></div></div><div class="card"><h2>Division</h2><div id="dt"></div></div></section>
+<section id="masteryChecks"><div class="card"><h2>🧠 Quick mastery checks</h2><div id="checks"></div></div></section><section id="history"><div class="card"><h2>Recent tutoring sessions</h2><div id="hist"></div></div></section>
+<section id="plan"><div class="report"><h2>Recommended next lesson</h2><div id="next"></div></div><div class="card"><h2>Suggested 15-minute session</h2><ol id="routine"></ol></div><div class="card"><h2>End-of-session checklist</h2><ul><li>Record the strongest fact recalled without help.</li><li>Record the hardest fact and the strategy used.</li><li>Give 3 final independent questions.</li><li>Export the session report if you want a permanent record.</li></ul></div></section>
+
+<script>
+let M=null,D=null,sessions=[];
+const $=id=>document.getElementById(id);
+function tab(id,b){document.querySelectorAll('section').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
+$('file').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let p=JSON.parse(r.result);if(p.book==='multiplication')M=p.data||M;if(p.book==='division')D=p.data||D;if(p.allSessions)sessions=sessions.concat(p.allSessions);render()}catch(err){alert('This JSON file could not be read.')}};r.readAsText(f)};
+function loadDemo(){M={unlocked:9,stars:45,facts:{'6x7':{r:5,w:1},'6x8':{r:3,w:4},'7x8':{r:2,w:6},'7x9':{r:3,w:3},'8x6':{r:5,w:1},'8x7':{r:3,w:2},'9x6':{r:2,w:6},'9x7':{r:4,w:1}}};D={unlocked:7,stars:18,facts:{'6d7':{r:5,w:1},'7d8':{r:2,w:5},'8d6':{r:3,w:2},'9d6':{r:2,w:4}}};sessions=[{started:'2026-08-15T16:00:00',ended:'2026-08-15T16:18:00',right:13,wrong:5,items:[]},{started:'2026-08-17T16:00:00',ended:'2026-08-17T16:20:00',right:16,wrong:4,items:[]}];render()}
+function clearAll(){M=null;D=null;sessions=[];render()}
+function metrics(data,op){if(!data)return{attempts:0,acc:0,weak:[],mastered:0};let r=0,w=0,weak=[];for(let t=2;t<=12;t++)for(let n=1;n<=12;n++){let k=op==='m'?t+'x'+n:t+'d'+n,f=data.facts?.[k];if(f){r+=f.r||0;w+=f.w||0;if((f.w||0)>(f.r||0))weak.push({t,n,w:f.w||0,r:f.r||0})}}let mastered=0;for(let t=2;t<=12;t++){let ok=true;for(let n=1;n<=12;n++){let k=op==='m'?t+'x'+n:t+'d'+n,f=data.facts?.[k];if(!f||f.r<3||f.w>f.r){ok=false;break}}if(ok)mastered++}return{attempts:r+w,acc:r+w?Math.round(100*r/(r+w)):0,weak:weak.sort((a,b)=>b.w-a.w),mastered}}
+function rows(data,op){let h='<table><tr><th>Table</th><th>Accuracy</th><th>Status</th><th>Priority</th></tr>';for(let t=2;t<=12;t++){let r=0,w=0,weak=[];for(let n=1;n<=12;n++){let f=data?.facts?.[(op==='m'?t+'x'+n:t+'d'+n)];if(f){r+=f.r||0;w+=f.w||0;if(f.w>f.r)weak.push(op==='m'?`${t}×${n}`:`${t*n}÷${t}`)}}let p=r+w?Math.round(100*r/(r+w)):0,hc=p>=90?'🟢 Strong':p>=70?'🟡 Developing':p?'🔴 Needs work':'⚪ Not started';h+=`<tr><td>${op==='m'?'×':'÷'} ${t}</td><td>${p}%</td><td>${hc}</td><td>${weak.slice(0,4).join(', ')||'—'}</td></tr>`}return h+'</table>'}
+function render(){let m=metrics(M,'m'),d=metrics(D,'d');$('kpis').innerHTML=`<div class="card"><div class="kpi">${m.acc}%</div><b>Multiplication accuracy</b><p class="muted">${m.attempts} recorded answers</p></div><div class="card"><div class="kpi">${d.acc}%</div><b>Division accuracy</b><p class="muted">${d.attempts} recorded answers</p></div><div class="card"><div class="kpi">${m.mastered}</div><b>Multiplication tables mastered</b></div><div class="card"><div class="kpi">${d.mastered}</div><b>Division tables mastered</b></div>`;
+$('mt').innerHTML=rows(M,'m');$('dt').innerHTML=rows(D,'d');let checks=[];if(M?.masteryChecks)Object.entries(M.masteryChecks).forEach(([t,x])=>checks.push({book:'Multiplication',table:'× '+t,...x}));if(D?.masteryChecks)Object.entries(D.masteryChecks).forEach(([t,x])=>checks.push({book:'Division',table:'÷ '+t,...x}));$('checks').innerHTML=checks.length?'<table><tr><th>Book</th><th>Table</th><th>Best</th><th>Last</th><th>Status</th></tr>'+checks.map(x=>`<tr><td>${x.book}</td><td>${x.table}</td><td>${x.best}/5</td><td>${x.last}/5</td><td>${x.passed?'🟢 Ready':'🟡 Practise again'}</td></tr>`).join('')+'</table>':'<p>No quick mastery checks imported yet.</p>';
+let all=[...m.weak.map(x=>({kind:'Multiplication',text:`${x.t} × ${x.n}`,w:x.w})),...d.weak.map(x=>({kind:'Division',text:`${x.t*x.n} ÷ ${x.t}`,w:x.w}))].sort((a,b)=>b.w-a.w).slice(0,8);$('priority').innerHTML=all.length?'<ul>'+all.map(x=>`<li><b>${x.text}</b> <span class="pill">${x.kind}</span> — ${x.w} more wrong than right</li>`).join('')+'</ul>':'<p>Import progress to identify priority facts.</p>';
+$('hist').innerHTML=sessions.length?'<table><tr><th>Date</th><th>Right</th><th>Wrong</th><th>Accuracy</th></tr>'+sessions.slice(-12).reverse().map(s=>{let total=(s.right||0)+(s.wrong||0),p=total?Math.round(100*s.right/total):0;return `<tr><td>${new Date(s.started).toLocaleDateString()}</td><td>${s.right}</td><td>${s.wrong}</td><td>${p}%</td></tr>`}).join('')+'</table>':'<p>No session history imported yet.</p>';
+let top=all[0];$('next').innerHTML=top?`<p><b>Teach ${top.text} next.</b></p><p>Use 2–3 visual examples, then 3 guided examples, then 5 independent questions. If the child misses it twice, return to the visual model.</p>`:'<p>Start with multiplication foundations and build toward 6–9.</p>';
+$('routine').innerHTML='<li>2 min — warm-up with mastered facts.</li><li>5 min — teach the priority fact visually.</li><li>5 min — adaptive practice on related facts.</li><li>3 min — detective challenge + exit check.</li>'}
+function exportSummary(){let report={generated:new Date().toISOString(),multiplication:M,division:D,sessions,priority:'See dashboard priority list'};let b=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='math_explorer_tutor_summary.json';a.click();URL.revokeObjectURL(a.href)}
+loadDemo();
+</script></body></html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Explorer — Multiplication</title>
+<style>
+:root{--navy:#17365D;--blue:#4F81BD;--green:#70AD47;--orange:#F4B183;--purple:#8064A2;--gold:#FFD966;--bg:#F7F9FC;--text:#243447;--muted:#667085}
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0}.wrap{max-width:960px;margin:auto;padding:18px}
+header{background:var(--navy);color:#fff;padding:22px;border-radius:20px}.score{float:right}.tabs,.choices,.tables{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{padding:11px 14px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-size:15px;cursor:pointer}button:hover,.active{background:var(--navy);color:#fff}
+section{display:none}.active-section{display:block}.hero,.card{padding:17px;border-radius:16px;margin:12px 0}.hero{background:#EAF3FF}.card{background:#fff;border:1px solid #d9e1ea}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.big{text-align:center;font-size:29px;font-weight:700;margin:15px}.groups{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}.group{border:2px solid var(--blue);border-radius:12px;padding:8px;display:grid;grid-template-columns:repeat(6,13px);gap:4px}.dot{width:13px;height:13px;border-radius:50%;background:var(--blue)}
+.bar{height:10px;background:#e7eaf0;border-radius:10px;overflow:hidden}.bar span{display:block;height:100%;background:var(--green)}
+.good{color:#287a3e;font-weight:700}.bad{color:#a33;font-weight:700}.tag{display:inline-block;padding:5px 9px;border-radius:99px;background:#eef2f7;margin:2px}.locked{opacity:.5}.small{font-size:13px;color:var(--muted)}.stars{font-size:20px}
+</style><style>
+.child-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;padding:10px 12px;background:#fff;border:1px solid #d9e1ea;border-radius:14px}
+.child-nav span{font-size:13px;color:#667085;margin-left:auto}
+.mastery-modal{position:fixed;inset:0;background:rgba(20,35,55,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.mastery-box{background:#fff;max-width:560px;width:100%;border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.mastery-q{font-size:30px;font-weight:700;text-align:center;margin:20px 0}.mastery-choices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mastery-result{padding:15px;border-radius:15px;background:#EAF3FF;margin:12px 0}.mastery-good{background:#EAF7E8}.mastery-warn{background:#FFF5D6}
+.strategy-card{padding:14px;border-radius:15px;background:#F3EEFA;margin:12px 0}
+</style><link rel="manifest" href="manifest.webmanifest"></head><body><div class="wrap">
+<header><span class="score">⭐ <b id="stars">0</b></span><h1>Multiplication Explorer</h1><p>Learn • Practise • Solve • Master</p></header><nav class="child-nav"><button onclick="goHome()">🏠 Home</button><button onclick="goBack()">← Back</button><span>Choose a task below.</span></nav>
+<div class="tabs">
+<button class="active" onclick="show('learn',this)">🟢 Learn</button><button onclick="show('practice',this)">🟡 Practice</button>
+<button onclick="show('challenge',this)">🔵 Challenges</button><button onclick="show('test',this)">🔴 Random Test</button>
+<button onclick="show('progress',this)">📊 My Progress</button>
+</div>
+
+
+<div id="data-tools" style="margin:12px 0;padding:12px;background:#fff;border:1px solid #d9e1ea;border-radius:14px">
+  <b>👨‍🏫 Tutor tools</b>
+  <button onclick="exportProgress()">Export progress</button><button onclick="exportSessionReport()">Export session report</button>
+  <label style="display:inline-block;padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;cursor:pointer">
+    Import progress <input id="importFile" type="file" accept=".json" style="display:none" onchange="importProgress(event)">
+  </label>
+  <span style="font-size:12px;color:#667085">Use these to move progress into the Tutor Dashboard.</span>
+</div>
+<section id="learn" class="active-section">
+<div class="hero"><h2>Learning Path</h2><p>Finish the basics, then unlock the higher tables. 6–9 receive extra guided lessons.</p></div>
+<div class="tables" id="lessonButtons"></div><div class="card" id="lesson"></div>
+</section>
+
+<section id="practice"><div class="hero"><h2>Adaptive Practice</h2><p>The system brings back facts you miss more often. Pictures appear early and fade as you improve.</p></div>
+<div class="card"><div class="big" id="pq"></div><div class="groups" id="pv"></div><p id="ph"></p><div class="choices" id="pc"></div><p id="pf"></p><button onclick="nextPractice()">Next →</button></div></section>
+
+<section id="challenge"><div class="hero"><h2>Math Detective 🕵️</h2><p>Challenges test thinking, not just memory.</p></div>
+<div class="grid"><div class="card"><h3>Missing Number</h3><p id="mq"></p><div class="choices" id="mc"></div></div>
+<div class="card"><h3>True or False</h3><p id="tfq"></p><button onclick="answerTF(true)">True</button><button onclick="answerTF(false)">False</button></div>
+<div class="card"><h3>Detective Case</h3><p id="dq"></p><div class="choices" id="dc"></div></div></div><p id="cf"></p></section>
+
+<section id="test"><div class="hero"><h2>🎯 Random Test</h2><p>Questions are weighted toward facts that still need practice.</p></div>
+<div class="card"><p>Question <b id="tn">1</b> of 15</p><div class="big" id="tq"></div><div class="choices" id="tc"></div><p id="tfeed"></p><button onclick="startTest()">Start / New Test</button></div></section>
+
+<section id="progress"><div class="hero"><h2>📊 My Progress</h2><p>This browser remembers your progress.</p></div><div class="grid" id="pg"></div></section>
+</div>
+<script>
+const T=[2,3,4,5,6,7,8,9,10,11,12];
+const KEY='mathExplorerMultiplicationV2';
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{facts:{},stars:0,unlocked:2};
+function fact(t,n){let k=t+'x'+n;if(!data.facts[k])data.facts[k]={r:0,w:0,seen:0};return data.facts[k]}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));$('stars').textContent=data.stars}
+const $=id=>document.getElementById(id);
+function show(id,b){document.querySelectorAll('section').forEach(s=>s.classList.remove('active-section'));$(id).classList.add('active-section');document.querySelectorAll('.tabs>button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='challenge')challenge();if(id==='progress')progress()}
+function unlocked(t){return t<=data.unlocked}
+function lessonButtons(){ $('lessonButtons').innerHTML='';T.forEach(t=>{let b=document.createElement('button');b.textContent='× '+t;b.className=unlocked(t)?'':'locked';b.disabled=!unlocked(t);b.onclick=()=>lesson(t);$('lessonButtons').appendChild(b)})}
+function lesson(t){
+let guided={
+6:['Start with groups','6 groups of 3 make 18.','3+3+3+3+3+3=18','6×7 = 5×7 + 7 = 35+7 = 42'],
+7:['Start with groups','7 groups of 2 make 14.','2+2+2+2+2+2+2=14','7×8 = 7×7 + 7 = 49+7 = 56'],
+8:['Start with groups','8 groups of 3 make 24.','3+3+3+3+3+3+3+3=24','8×6 = 4×6 doubled = 24×2 = 48'],
+9:['Start with groups','9 groups of 2 make 18.','2+2+2+2+2+2+2+2+2=18','9×6 = 10×6 − 6 = 60−6 = 54']
+}[t];
+let s=`<h2>The ${t} Times Table</h2>`;
+if(guided)s+=`<p><b>Step 1:</b> ${guided[1]}</p><p><b>Step 2:</b> ${guided[2]}</p><div class="hero"><b>Step 3 — Strategy:</b><br>${guided[3]}</div>`;
+else s+=`<p>Skip-count by ${t}:</p><div class="big">${Array.from({length:12},(_,i)=>(i+1)*t).join(' · ')}</div><p>Use a known fact to build harder facts.</p>`;
+s+=`<p class="small">Complete the lesson to unlock the next table. Your tutor can revisit any unlocked table.</p><button onclick="completeLesson(${t})">✓ I understand this lesson</button>`;
+$('lesson').innerHTML=s}
+function completeLesson(t){if(t===data.unlocked && data.unlocked<12)data.unlocked=T[T.indexOf(t)+1]||12;data.stars+=2;save();lessonButtons();lesson(t)}
+function pickFact(){let candidates=[];for(let t=2;t<=data.unlocked;t++)for(let n=1;n<=12;n++){let f=fact(t,n),weight=1+f.w*4+(f.seen<2?2:0);for(let i=0;i<weight;i++)candidates.push([t,n])}return candidates[Math.floor(Math.random()*candidates.length)]}
+let current=null;
+function practice(){
+current=pickFact();let [t,n]=current,a=t*n,f=fact(t,n);f.seen++;save();$('pq').textContent=`${t} × ${n} = ?`;$('pv').innerHTML='';
+let visual=f.r<3||f.seen<=3;
+if(visual&&n<=6){for(let g=0;g<n;g++){let d=document.createElement('div');d.className='group';for(let i=0;i<t;i++){let s=document.createElement('span');s.className='dot';d.appendChild(s)}$('pv').appendChild(d)}$('ph').textContent='Count the groups and the dots.'}
+else $('ph').textContent='Try the fact from memory. If it is hard, use a strategy.';
+let opts=[a,a+t,Math.max(t,a-t),a+1].sort(()=>Math.random()-.5);$('pc').innerHTML='';
+[...new Set(opts)].slice(0,4).forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>{if(v===a){f.r++;f.w=Math.max(0,f.w-1);data.stars++;$('pf').innerHTML='<span class="good">Correct! 🎉</span>'}else{f.w++;logAnswer('multiplication',t,n,false,v);$('pf').innerHTML='<span class="bad">Not yet. Build the fact from something you know.</span>'}save();progress()};$('pc').appendChild(b)})}
+function nextPractice(){$('pf').textContent='';practice()}
+function challenge(){let t=Math.min(data.unlocked,12),n=Math.floor(Math.random()*8)+3,a=t*n,m=a/t;$('mq').textContent=`${t} × □ = ${a}`;$('mc').innerHTML='';[m,m+1,Math.max(1,m-1),m+2].sort(()=>Math.random()-.5).forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>$('cf').textContent=v===m?'Correct detective! 🔎':'Use the table as your clue.';$('mc').appendChild(b)});
+let truth=Math.random()<.5,shown=truth?a:a+t;$('tfq').textContent=`${t} × ${Math.round(shown/t)} = ${shown}`;window.answerTF=v=>$('cf').textContent=v===truth?'Correct!':'Not quite.';
+let z=t*(Math.floor(Math.random()*8)+2);$('dq').textContent=`I multiplied a number by ${t} and got ${z}. What was my number?`;$('dc').innerHTML='';[z/t,z/t+1,z/t-1,z/t+2].filter(x=>x>0).forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>$('cf').textContent=v===z/t?'Case solved! 🕵️':'Keep using the table.';$('dc').appendChild(b)})}
+let test=[],ti=0,ts=0;
+function startTest(){test=[];for(let i=0;i<15;i++){let [t,n]=pickFact();test.push({q:`${t} × ${n} = ?`,a:t*n})}ti=0;ts=0;renderTest()}
+function renderTest(){let x=test[ti];$('tn').textContent=ti+1;$('tq').textContent=x.q;$('tc').innerHTML='';$('tfeed').textContent='';[x.a,x.a+Math.max(1,Math.floor(x.a/10)),Math.max(1,x.a-1),x.a+1].sort(()=>Math.random()-.5).forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>{if(v===x.a){ts++;data.stars++}ti++;save();if(ti<15)renderTest();else{$('tq').textContent=`Test complete: ${ts}/15`;$('tc').innerHTML='';$('tfeed').innerHTML=`<b>${ts}/15</b> correct. ${ts>=13?'Excellent work!':ts>=10?'Good work — keep practising the tricky facts.':'Let’s practise the facts that caused trouble.'}`;progress()}};$('tc').appendChild(b)})}
+function progress(){$('pg').innerHTML='';T.forEach(t=>{let right=0,total=0,weak=[];for(let n=1;n<=12;n++){let f=fact(t,n);right+=f.r;total+=f.r+f.w;if(f.w>f.r)weak.push(n)}let p=total?Math.round(100*right/total):0,d=document.createElement('div');d.className='card';d.innerHTML=`<b>${t}s</b><p>${right}/${total} correct</p><div class="bar"><span style="width:${p}%"></span></div><p>${p}% accuracy</p><p class="small">${weak.length?'Needs work: '+weak.map(n=>t+'×'+n).join(', '):'No clear weak facts yet.'}</p>`;$('pg').appendChild(d)})}
+$('stars').textContent=data.stars;lessonButtons();lesson(Math.min(data.unlocked,12));practice();challenge();progress();
+
+function exportProgress(){
+ const payload={app:"Math Explorer",book:"multiplication",version:"3.0",exportedAt:new Date().toISOString(),data:JSON.parse(localStorage.getItem("mathExplorerMultiplicationV2")||"{}")};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=payload.book+"_progress.json";a.click();URL.revokeObjectURL(a.href);
+}
+function importProgress(e){
+ const f=e.target.files[0]; if(!f)return;
+ const r=new FileReader(); r.onload=()=>{try{const p=JSON.parse(r.result);localStorage.setItem("mathExplorerMultiplicationV2",JSON.stringify(p.data));location.reload()}catch(err){alert("That progress file could not be read.")}}; r.readAsText(f);
+}
+
+const SESSION_KEY="mathExplorerMultiplicationV2_sessions_v4";
+let sessionStarted=new Date().toISOString(), sessionRight=0, sessionWrong=0, sessionItems=[];
+function logAnswer(book,t,n,correct,userAnswer){
+  sessionItems.push({time:new Date().toISOString(),book,table:t,fact:n,correct,userAnswer});
+  if(correct)sessionRight++;else sessionWrong++;
+}
+function finishSession(){
+  let sessions=JSON.parse(localStorage.getItem(SESSION_KEY)||"[]");
+  sessions.push({started:sessionStarted,ended:new Date().toISOString(),right:sessionRight,wrong:sessionWrong,items:sessionItems});
+  localStorage.setItem(SESSION_KEY,JSON.stringify(sessions));
+}
+function exportSessionReport(){
+  finishSession();
+  let sessions=JSON.parse(localStorage.getItem(SESSION_KEY)||"[]");
+  let latest=sessions[sessions.length-1]||{};
+  let report={book:"multiplication",session:latest,allSessions:sessions};
+  let blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+  let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="multiplication_session_report.json";a.click();URL.revokeObjectURL(a.href);
+}
+window.addEventListener("beforeunload",()=>{if(sessionItems.length)finishSession()});
+</script><script>
+function goHome(){location.href='index.html'} function goBack(){if(history.length>1)history.back();else goHome()}
+let masteryState={};
+function startMasteryCheck(t){masteryState={table:t,questions:[6,7,8,9,10,11,12].sort(()=>Math.random()-.5).slice(0,5).map(n=>({n,answer:t*n})),i:0,score:0};showMasteryModal();renderMasteryQuestion()}
+function showMasteryModal(){if(document.getElementById('masteryModal'))return;let d=document.createElement('div');d.id='masteryModal';d.className='mastery-modal';d.innerHTML='<div class="mastery-box"><h2>🧠 Show me what you know!</h2><p>Let’s do a quick check before moving on. You do not need to be perfect.</p><div id="masteryBody"></div></div>';document.body.appendChild(d)}
+function renderMasteryQuestion(){let q=masteryState.questions[masteryState.i],b=document.getElementById('masteryBody'),opts=[q.answer,q.answer+masteryState.table,Math.max(1,q.answer-masteryState.table),q.answer+1].sort(()=>Math.random()-.5);b.innerHTML=`<p>Question ${masteryState.i+1} of 5</p><div class="mastery-q">${masteryState.table} × ${q.n} = ?</div><div class="mastery-choices" id="masteryChoices"></div><p class="muted">Try to answer without counting. This checks quick recall.</p>`;[...new Set(opts)].slice(0,4).forEach(v=>{let x=document.createElement('button');x.textContent=v;x.onclick=()=>answerMastery(v);document.getElementById('masteryChoices').appendChild(x)})}
+function answerMastery(v){if(v===masteryState.questions[masteryState.i].answer)masteryState.score++;masteryState.i++;if(masteryState.i<5)renderMasteryQuestion();else finishMasteryCheck()}
+function finishMasteryCheck(){let t=masteryState.table,s=masteryState.score,pass=s>=4;data.masteryChecks=data.masteryChecks||{};let old=data.masteryChecks[t]||{attempts:0,best:0};data.masteryChecks[t]={attempts:old.attempts+1,best:Math.max(old.best,s),last:s,passed:pass,updated:new Date().toISOString()};if(pass){if(t===data.unlocked&&data.unlocked<12)data.unlocked=T[T.indexOf(t)+1]||12;data.stars+=2;save();lessonButtons()}let b=document.getElementById('masteryBody');b.innerHTML=`<h2>${pass?'🟢 Ready to move on!':'🟡 Almost there!'}</h2><div class="mastery-result ${pass?'mastery-good':'mastery-warn'}"><b>${s}/5 correct</b><br>Quick-recall score: ${s}/5</div>${!pass?`<div class="strategy-card"><b>Try a strategy:</b><br>${strategyFor(t)}</div>`:''}<p>${pass?(t<12?'You are ready to explore the next table.':'Excellent! You have completed the learning path.'):'Let’s practise this table a little more, then try the check again.'}</p><button onclick="closeMastery()">${pass?'Continue':'Back to practice'}</button>`}
+function strategyFor(t){return ({6:'6×8 = 5×8 + 8 = 48.',7:'7×8 = 7×7 + 7 = 56.',8:'8×6 = 4×6 doubled = 48.',9:'9×6 = 10×6 − 6 = 54.'}[t])||`Skip-count by ${t} and connect the pattern to a known fact.`}
+function closeMastery(){document.getElementById('masteryModal')?.remove();lessonButtons();lesson(masteryState.table)}
+function completeLesson(t){startMasteryCheck(t)}
+const originalLessonV5=lesson;
+function lesson(t){originalLessonV5(t);let btn=document.querySelector('#lesson button[onclick^="completeLesson"]');if(btn)btn.textContent='🧠 Show me what you know!';let note=document.querySelector('#lesson .small');if(note)note.innerHTML='Learn the pattern, then take a 5-question quick check. Passing it unlocks the next table.'}
+lessonButtons();lesson(data.unlocked);
+</script></body></html>
